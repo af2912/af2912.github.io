@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>D3: Time axis, prettier</title>
+		<script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+		<style type="text/css">
+			/* No style rules here yet */
+		</style>
+	</head>
+	<body>
+		<div id="commuting"></div>
+
+		<script type="text/javascript">
+
+	d3.csv("inClassSurveyData.csv")
+	.then(function(data) {
+			drawCommute(data)
+		})
+
+	function drawCommute(data){
+console.log(data)
+		var w = 800
+		var h = 420
+		var padding = 30
+		var r = 5
+		var svg = d3.select("#commuting")
+				.append("svg")
+				.attr("width",w)
+				.attr("height",h)
+
+	var xScale = d3.scaleLinear()
+		.domain([0,90])
+		.range([0,w-padding])
+
+	var rScale = d3.scaleLinear()
+		.domain([0,d3.max(data, function(d){return d.commute; })])
+		.range([1,8])
+
+	var xAxis = d3.axisBottom()
+								.scale(xScale);
+
+svg.selectAll("circle")
+		.data(data)
+		.enter()
+		.append("circle")
+		.attr("cx",function(d,i){
+			return xScale(d.commute)
+			})
+		.attr("cy",h/2)
+		.attr("r", function(d,i) {
+			return rScale(d.commute);
+			})
+		.style("fill","black")
+		.style("opacity",.5)
+
+
+svg.append("g")
+		.attr("class", "axis")
+		.attr("transform", "translate(0," + (h - padding) + ")")
+		.call(xAxis);
+	}
+		</script>
+	</body>
+</html>
