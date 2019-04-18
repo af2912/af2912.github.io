@@ -1,0 +1,153 @@
+ <!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>311 Data in South Harlem: Change Over Time</title><!-- make your own with https://www.favicon.cc/-->
+ <!-- <link href="../favicon.ico" rel="shortcut icon" type="image/x-icon" /> -->
+ <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+		<style type="text/css">
+
+    #tooltip {
+      position: absolute;
+      width: 200px;
+      height: auto;
+      padding: 10px;
+      background-color: white;
+      -webkit-border-radius: 10px;
+      -moz-border-radius: 10px;
+      border-radius: 10px;
+      -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+      -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+      box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+    }
+
+    #tooltip.hidden {
+      display: none;
+    }
+
+    #tooltip p {
+      margin: 0;
+      font-family: sans-serif;
+      font-size: 16px;
+      line-height: 20px;
+    }
+
+		</style>
+	</head>
+      <div id="title"></div>
+      311 Calls in Morninside Heights
+      <div id="subtitle"></div>
+        Select 311 Calls From 10026 Zip Code, 2010-2018
+      <div id="content"></div>
+      <ul>
+          <li>HPD<style=width:100px;height:100px;font:"red";</li>
+          <li>NYPD</li>
+          <li>DSNY</li>
+          <li>DOB</li>
+        </ul>
+
+      <div id="chart"></div>
+
+	<body>
+	 <script type="text/javascript">
+    //  d3.select("body").append("p").text("311 Data in 10026 Zip Code");
+
+        Promise.all([d3.csv("311Data_10026_Agency-EDITED.csv")])
+        .then(function(data){
+        var agencies = data[0]
+        var svg = d3.select("#chart")
+            .append("svg")
+            .attr("width",1200)
+            .attr("height",500)
+        formatAgency(agencies,svg,"HPD","red")
+        formatAgency(agencies,svg,"NYPD","blue")
+        formatAgency(agencies,svg,"DSNY","orange")
+        formatAgency(agencies,svg,"DOB","green")
+        })
+
+        var monthTranslate = {Jan:"01",Feb:"02",Mar:"03",Apr:"04",May:"05",Jun:"06",Jul:"07",Aug:"08",Sep:"09",Oct:"10",Nov:"11",Dec:"12"}
+
+
+        function formatAgency(data,svg,agencyName,color){
+
+            var hpd = data.filter(function(d){return d.Agency == agencyName;})
+            var formatted = {}
+            var allYears = []
+            var nested = d3.nest().key(function(d){
+                var key = d.CreatedDate
+                var month = key.split("-")[1]
+                var monthNumber = monthTranslate[month]
+                var year = key.split("-")[0]
+                if(allYears.indexOf(year)==-1){
+                    allYears.push(year)
+                }
+                var formattedDate = String(year)+String(monthNumber)
+                return formattedDate
+
+            }).entries(hpd)
+
+
+            nested.sort(function(a,b){
+                return a.key - b.key
+            })
+
+            var numberOfDates = Object.keys(formatted).length
+            var barWidth = 10
+            var yearWidth = barWidth*12
+
+				var xScale = d3.scaleLinear()
+											.domain([2010,2019])//!!!!!!!!!!!!!!!
+											.range([0,1200])
+
+				var yScale = d3.scaleLinear()
+											.domain([0,d3.max(nested, function(d,i) { return d.values.length })])
+											.range([0, 480]);
+
+				var xAxis = d3.axisBottom()
+										  .scale(xScale)
+											.ticks(8,"f");
+
+				var yAxis = d3.axisLeft()
+								  .scale(yScale)
+								  .ticks(3);
+
+				var padding = 15
+
+            var line = d3.line()
+                .x(function(d,i){
+                    var year = d.key.slice(0,2)
+                    var month = d.key.slice(2,4)
+                    return (year-10)*yearWidth+month*barWidth + padding
+                })
+                .y(function(d,i){
+                    return yScale(d.values.length)
+                })
+                .curve(d3.curveCardinal);
+
+
+
+        // draw the line
+            svg.append("path")
+                .data([nested])
+                .attr("d",line)
+                .attr("class",agencyName)
+                .attr("fill","none")
+                .attr("stroke", color)//styles the line with attr
+
+
+			svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate(" + padding +",480)")
+	   			.call(xAxis);
+            //
+
+			svg.append("g")
+					.attr("class", "axis")
+					.attr("transform", "translate(" + padding + ",0)")
+					.call(yAxis);
+        }
+
+		</script>
+	</body>
+</html>
